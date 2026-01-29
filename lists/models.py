@@ -32,17 +32,43 @@ class Item(models.Model):
 
     @property
     def site_name(self):
-        """Extrait 'Fnac' de 'https://www.fnac.com/produit...'"""
+        """
+        Extrait le nom du site proprement.
+        Ex: 'https://fr.gymshark.com/...' -> 'Gymshark'
+        Ex: 'https://www.fnac.com/...' -> 'Fnac'
+        """
         try:
             if not self.url:
                 return ""
-            # On recupere le domaine (ex: www.amazon.fr)
+
+            # On récupère le domaine (ex: fr.gymshark.com)
             domain = urlparse(self.url).netloc
-            # On enleve le 'www.'
-            domain = domain.replace("www.", "")
-            # On garde juste ce qu'il y a avant le premier point
-            name = domain.split(".")[0]
-            # On met une majuscule (fnac -> Fnac)
+
+            # On enlève le port si présent (ex: :8000)
+            if ":" in domain:
+                domain = domain.split(":")[0]
+
+            parts = domain.split(".")
+
+            # Liste des préfixes à ignorer
+            ignore_list = [
+                "www",
+                "fr",
+                "en",
+                "m",
+                "shop",
+                "store",
+                "secure",
+                "checkout",
+                "boutique",
+            ]
+
+            # Si le premier bout est dans la liste (ex: 'fr'), on prend le suivant
+            if len(parts) > 1 and parts[0] in ignore_list:
+                name = parts[1]
+            else:
+                name = parts[0]
+
             return name.capitalize()
         except Exception:
             return ""

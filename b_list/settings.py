@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import dj_database_url
 
 # Chemins
@@ -55,9 +56,8 @@ WSGI_APPLICATION = "b_list.wsgi.application"
 
 # Configuration Base de données (Compatible Heroku/Railway/Render)
 DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
-        conn_max_age=600
+    "default": dj_database_url.config(
+        default="sqlite:///" + str(BASE_DIR / "db.sqlite3"), conn_max_age=600
     )
 }
 
