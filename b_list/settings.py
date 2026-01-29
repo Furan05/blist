@@ -1,4 +1,5 @@
 from pathlib import Path
+import dj_database_url
 
 # Chemins
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -52,12 +53,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "b_list.wsgi.application"
 
-# Base de données
+# Configuration Base de données (Compatible Heroku/Railway/Render)
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    'default': dj_database_url.config(
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
+        conn_max_age=600
+    )
 }
 
 # Validateurs de mot de passe
