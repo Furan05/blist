@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 translate-y-20 opacity-0 transition-all duration-500 z-50">
+        <div class="bg-ink text-paper px-6 py-3 rounded-full shadow-2xl flex items-center gap-3">
+            <span class="text-sm font-medium" id="toast-message">Action réussie</span>
+        </div>
+    </div>
+
+    <div class="mb-20 text-center border-b border-stone-200 pb-12">
+        <span class="font-mono text-xs text-stone-400 uppercase tracking-widest mb-4 block">Wishlist</span>
+        <h1 class="font-serif text-5xl md:text-7xl text-ink mb-6">{{ gift_list.title }}</h1>
+
+        <button onclick="copyLink()" class="group inline-flex items-center gap-2 text-stone-500 hover:text-ink transition-colors pb-1 border-b border-transparent hover:border-ink">
+            <span class="text-sm font-medium">Copier le lien permanent</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="max-w-2xl mx-auto mb-24 relative">
+        <div id="loader-line" class="absolute bottom-0 left-0 h-[2px] bg-ink w-0 transition-all duration-[3000ms] ease-out"></div>
+        <form action="{% url 'add_item' gift_list.slug %}" method="POST" class="flex gap-4 items-end" onsubmit="startLoading()">
+            {% csrf_token %}
+            <div class="flex-grow">
+                <label class="block font-mono text-xs text-stone-400 mb-2 uppercase">Ajouter un désir</label>
+                <input type="url" name="url" required placeholder="https://..."
+                       class="block w-full bg-transparent border-b border-stone-300 py-3 text-lg font-serif text-ink placeholder-stone-300 focus:border-ink focus:outline-none transition-colors rounded-none">
+            </div>
+            <button type="submit" id="submit-btn" class="bg-stone-100 hover:bg-ink hover:text-white text-ink font-medium px-6 py-3 rounded-lg transition-colors duration-300">+</button>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+        {% for item in gift_list.items.all %}
+            <div class="group relative flex flex-col" x-data="{ editing: false }">
+
+                <div class="absolute -top-3 right-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
+                    <button onclick="openEditModal('{{ item.id }}', '{{ item.title|escapejs }}', '{{ item.price|escapejs }}', '{{ item.image_url|escapejs }}')"
+                            class="bg-paper text-stone-400 hover:text-ink rounded-full p-2 border border-stone-200 shadow-sm transition-colors" title="Modifier">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <form action="{% url 'delete_item' gift_list.slug item.id %}" method="POST" onsubmit="return confirm('Retirer ?');">
+                        {% csrf_token %}
+                        <button class="bg-paper text-stone-400 hover:text-red-500 rounded-full p-2 border border-stone-200 shadow-sm transition-colors" title="Supprimer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="aspect-square bg-stone-100 mb-6 relative overflow-hidden rounded-sm border border-stone-100 group-hover:border-stone-300 transition-colors">
+                    {% if item.is_reserved %}
+                        <div class="absolute inset-0 bg-ink/10 backdrop-grayscale z-10 flex items-center justify-center">
+                            <span class="bg-paper text-ink font-mono text-xs px-3 py-1 uppercase tracking-widest border border-ink">
+                                Offert par {{ item.reserved_by_name }}
+                            </span>
+                        </div>
+                    {% endif %}
+
+                    {% if item.image_url %}
+                        <img src="{{ item.image_url }}" class="w-full h-full object-cover mix-blend-multiply opacity-90 group-hover:opacity-100 transition duration-700">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-stone-300">
+                            <span class="font-serif italic text-4xl">Img.</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <h3 class="font-serif text-xl text-ink leading-tight mb-2 group-hover:underline decoration-1 underline-offset-4">
+                        <a href="{{ item.url }}" target="_blank">{{ item.title|default:"Objet sans nom" }}</a>
+                    </h3>
+                    <p class="font-mono text-xs text-stone-400 uppercase tracking-widest flex items-center gap-2">
+                        {% if item.site_name %}
+                            <span class="font-bold text-stone-600">{{ item.site_name }}</span>
+                            <span class="text-stone-300">•</span>
+                        {% endif %}
+                        <span>{{ item.price|default:"Prix libre" }}</span>
+                    </p>        </div>
+
+                <div class="mt-4 pt-4 border-t border-stone-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    {% if not item.is_reserved %}
+                        <div id="actions-{{ item.id }}" class="flex gap-4">
+                            <button onclick="toggleReserve('{{ item.id }}')" class="text-sm font-medium text-ink hover:text-stone-500 transition-colors">
+                                → Je l'offre
+                            </button>
+                        </div>
+
+                        <form id="form-{{ item.id }}" action="{% url 'reserve_item' gift_list.slug item.id %}" method="POST" class="hidden flex items-center gap-2">
+                            {% csrf_token %}
+                            <input type="text" name="guest_name" placeholder="Votre Prénom" required
+                                   class="bg-transparent border-b border-ink text-sm py-1 w-full focus:outline-none placeholder-stone-400">
+                            <button type="submit" class="text-xs bg-ink text-white px-3 py-1.5 rounded-sm">OK</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div id="edit-modal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-stone-900/40 backdrop-blur-sm transition-opacity" onclick="closeEditModal()"></div>
+
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-paper p-8 shadow-2xl rounded-lg border border-stone-200">
+            <h2 class="font-serif text-2xl text-ink mb-6">Modifier le produit</h2>
+
+            <form id="edit-form" method="POST" action="">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    <div>
+                        <label class="block font-mono text-xs text-stone-400 uppercase mb-1">Titre</label>
+                        <input type="text" name="title" id="edit-title" class="w-full bg-stone-50 border border-stone-200 p-2 text-ink focus:border-ink focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-mono text-xs text-stone-400 uppercase mb-1">Prix</label>
+                        <input type="text" name="price" id="edit-price" class="w-full bg-stone-50 border border-stone-200 p-2 text-ink focus:border-ink focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-mono text-xs text-stone-400 uppercase mb-1">Image URL</label>
+                        <input type="text" name="image_url" id="edit-image" class="w-full bg-stone-50 border border-stone-200 p-2 text-ink focus:border-ink focus:outline-none text-xs">
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-end gap-4">
+                    <button type="button" onclick="closeEditModal()" class="text-stone-400 hover:text-ink text-sm">Annuler</button>
+                    <button type="submit" class="bg-ink text-white px-6 py-2 rounded-sm text-sm font-medium hover:bg-stone-800">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    // Gestion du Toast et Copie
+        function copyLink() {
+            navigator.clipboard.writeText("{{ request.build_absolute_uri }}");
+            const toast = document.getElementById('toast');
+            toast.classList.remove('opacity-0', 'translate-y-20');
+            setTimeout(() => toast.classList.add('opacity-0', 'translate-y-20'), 3000);
+        }
+
+        function startLoading() {
+            document.getElementById('submit-btn').innerHTML = '...';
+            document.getElementById('loader-line').style.width = '100%';
+        }
+
+        function toggleReserve(id) {
+            document.getElementById('actions-' + id).classList.add('hidden');
+            document.getElementById('form-' + id).classList.remove('hidden');
+        }
+
+    // Gestion de la Modal d'édition
+        function openEditModal(id, title, price, image) {
+            const modal = document.getElementById('edit-modal');
+            const form = document.getElementById('edit-form');
+
+        // On remplit les champs
+            document.getElementById('edit-title').value = title;
+            document.getElementById('edit-price').value = price === 'None' ? '' : price;
+            document.getElementById('edit-image').value = image === 'None' ? '' : image;
+
+        // On met à jour l'action du formulaire
+            form.action = "{% url 'list_detail' gift_list.slug %}" + "edit/" + id + "/";
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+    </script>
+{% endblock %}

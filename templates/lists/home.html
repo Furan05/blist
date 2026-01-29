@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="flex flex-col items-center justify-center py-20 md:py-32 text-center max-w-2xl mx-auto">
+
+        <h1 class="font-serif text-6xl md:text-7xl text-ink mb-8 leading-[0.9]">
+            La liste <br>
+            <span class="italic text-stone-500">parfaite.</span>
+        </h1>
+
+        <p class="text-lg md:text-xl text-stone-600 mb-12 leading-relaxed font-light">
+            Anniversaires, naissances, mariages. <br>
+            Créez une liste élégante, sans inscription compliquée, et recevez ce qui compte vraiment.
+        </p>
+
+        <div class="w-full max-w-md">
+            <form action="" method="POST" class="relative group">
+                {% csrf_token %}
+                <input type="text" name="title" id="title" placeholder="Nommez votre événement..." required
+                       class="block w-full bg-transparent border-b-2 border-stone-300 py-4 text-center text-xl md:text-2xl font-serif text-ink placeholder-stone-300 focus:border-ink focus:outline-none transition-colors">
+
+                <button type="submit"
+                        class="mt-8 bg-ink text-paper hover:bg-stone-800 font-medium px-8 py-4 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-xl shadow-stone-400/20 flex items-center gap-2 mx-auto">
+                    Commencer
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

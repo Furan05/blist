@@ -1,0 +1,5 @@
+[flake8]
+# On augmente la tolérance à 92 pour accepter les settings Django par défaut
+max-line-length = 92
+extend-ignore = E203
+exclude = .git,__pycache__,migrations,venv
