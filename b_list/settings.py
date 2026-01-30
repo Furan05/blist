@@ -1,16 +1,28 @@
 from pathlib import Path
 
-import dj_database_url
+import dj_database_url  # Pour la base de données Railway
 
-# Chemins
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Sécurité (Clé dev)
-SECRET_KEY = "django-insecure-dev-key-change-me"
-DEBUG = True
-ALLOWED_HOSTS = []
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-# Applications
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = "django-insecure-change-me-in-production"
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+ALLOWED_HOSTS = ["*"]  # Autorise Railway et localhost
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.railway.app",
+    "https://*.onrender.com",
+]
+
+# Application definition
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -18,19 +30,26 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # Tes applications (C'est ici que ça bloquait)
-    "scraper",
+    "django.contrib.sites",  # <--- Virgule importante ici !
+    # --- AUTHENTIFICATION (Allauth) ---
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    # --- NOS APPS ---
     "lists",
+    "scraper",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # <--- Design en prod
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "allauth.account.middleware.AccountMiddleware",  # <--- Auth Middleware
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -39,12 +58,12 @@ ROOT_URLCONF = "b_list.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],  # On pointe vers ton dossier templates
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
-                "django.template.context_processors.request",
+                "django.template.context_processors.request",  # Requis par allauth
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
@@ -54,42 +73,76 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "b_list.wsgi.application"
 
-# Configuration Base de données (Compatible Heroku/Railway/Render)
+
+# Database
+# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+
 DATABASES = {
     "default": dj_database_url.config(
         default="sqlite:///" + str(BASE_DIR / "db.sqlite3"), conn_max_age=600
     )
 }
 
-# Validateurs de mot de passe
+
+# Password validation
+# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
+
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
 
-# Internationalisation
+
+# Internationalization
+# https://docs.djangoproject.com/en/5.0/topics/i18n/
+
 LANGUAGE_CODE = "fr-fr"
-TIME_ZONE = "UTC"
+
+TIME_ZONE = "Europe/Paris"
+
 USE_I18N = True
+
 USE_TZ = True
 
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
+
 STATIC_URL = "static/"
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# --- CONFIGURATION PRODUCTION ---
-
-# On stocke les fichiers CSS dans un dossier unique pour la production
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# On utilise WhiteNoise pour servir le CSS compressé
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# On autorise tous les hébergeurs (Railway, etc.)
-ALLOWED_HOSTS = ["*"]
+# Default primary key field type
+# https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
-# On fait confiance aux requêtes sécurisées (HTTPS)
-CSRF_TRUSTED_ORIGINS = ["https://*.railway.app", "https://*.onrender.com"]
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- CONFIGURATION ALLAUTH (GOOGLE) ---
+
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+# Redirections après connexion/déconnexion
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+
+# Paramètres de compte
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = "email"
+SOCIALACCOUNT_LOGIN_ON_GET = True
